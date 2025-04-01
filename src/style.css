@@ -1,0 +1,15 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  max-width: 30%;
+  gap: 10px;
+
+  .param {
+    display: flex;
+    gap: 10px;
+  }
+
+  .code {
+    white-space: pre-wrap;
+  }
+}
