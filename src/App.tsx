@@ -14,6 +14,7 @@ interface ParamValue {
 
 interface Model {
   paramValues: ParamValue[];
+  [key: string]: ParamValue[];
 }
 
 interface Props {
@@ -24,6 +25,8 @@ interface Props {
 const params: Param[] = [
   {id: 1, name: 'Назначение', type: 'text'},
   {id: 2, name: 'Длина', type: 'text'},
+  {id: 3, name: 'Цвет', type: 'color'},
+  {id: 4, name: 'Цена', type: 'number'},
 ];
 
 const model: Model = {
@@ -31,18 +34,44 @@ const model: Model = {
     {paramId: 1, value: 'повседневное'},
     {paramId: 2, value: 'макси'},
   ],
+  color: [{paramId: 3, value: '#ff0000'}],
+  price: [{paramId: 4, value: '1000'}],
 };
 
 const PROPS: Props = {params, model};
+
+interface ParamEditorProps {
+  param: Param;
+  value: string;
+  onChange: (e: ChangeEvent<HTMLInputElement>, paramId: number) => void;
+}
+
+const ParamEditor = ({param, value, onChange}: ParamEditorProps) => {
+  return (
+    <div key={param.id} className="param">
+      <label htmlFor={`${param.id}_input`}>{param.name}</label>
+      <input
+        type={param.type}
+        id={`${param.id}_input`}
+        value={value}
+        onChange={(e) => onChange(e, param.id)}
+      />
+    </div>
+  );
+};
 
 export const App = () => {
   const [props, setProps] = useState<Props>(PROPS);
   const [model, setModel] = useState('');
   const getParamValue = (paramId: number) => {
-    const paramValue = props.model.paramValues.find(
-      (value) => value.paramId === paramId
-    );
-    return paramValue ? paramValue.value : '';
+    const model: Model = props.model;
+    for (const key in model) {
+      const currentParam = model[key].find(
+        (currentParam) => currentParam.paramId === paramId
+      );
+      if (currentParam) return currentParam.value;
+    }
+    return '';
   };
 
   const handleChangeInputValue = (
@@ -50,13 +79,19 @@ export const App = () => {
     paramId: number
   ) => {
     const value = e.target.value;
-    const paramValues = props.model.paramValues.map((paramValue) => {
-      if (paramValue.paramId === paramId) {
-        paramValue.value = value;
+    setProps((prev) => {
+      const model = {...prev.model};
+      for (const key in model) {
+        const currentParam = model[key].find(
+          (currentParam) => currentParam.paramId === paramId
+        );
+        if (currentParam) currentParam.value = value;
       }
-      return paramValue;
+      return {
+        ...prev,
+        model,
+      };
     });
-    setProps((prev) => ({...prev, model: {...prev.model, paramValues}}));
   };
 
   const getModel = (e: FormEvent<HTMLFormElement>, currentProps: Props) => {
@@ -67,17 +102,14 @@ export const App = () => {
 
   return (
     <div className="app">
-      <form onSubmit={(e) => getModel(e, props)}>
+      <form onSubmit={(e) => getModel(e, props)} className="form">
         {props.params.map((param) => (
-          <div key={param.id} className="param">
-            <label htmlFor={`${param.id}_input`}>{param.name}</label>
-            <input
-              type={param.type}
-              id={`${param.id}_input`}
-              value={getParamValue(param.id)}
-              onChange={(e) => handleChangeInputValue(e, param.id)}
-            />
-          </div>
+          <ParamEditor
+            key={param.id}
+            param={param}
+            value={getParamValue(param.id)}
+            onChange={(e) => handleChangeInputValue(e, param.id)}
+          />
         ))}
         <button type="submit">get model</button>
       </form>
